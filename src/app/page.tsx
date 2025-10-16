@@ -14,45 +14,58 @@ const ai = new GoogleGenAI({
 });
 
 export default function ImageCaptionViewer() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [caption, setCaption] = useState<string>("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    console.log(file);
 
     if (file) {
       const reader = new FileReader();
-      reader.onload = async (event) => {
-        setSelectedImage(event.target?.result as string);
-        await generateCaption(file.type);
+      reader.onload = (event) => {
+        const imageString = event.target?.result as string;
+        setPreviewImage(imageString);
+        setSelectedImage(imageString.replace(/^data:.+;base64,/, ""));
+        setFileType(file.type);
       };
       reader.readAsDataURL(file);
     }
   };
 
   //
-  const generateCaption = async (mimetype: string) => {
+  const generateCaption = async () => {
     setIsGenerating(true);
+
+    console.log(selectedImage);
 
     const contents = [
       {
         inlineData: {
-          mimeType: mimetype,
+          mimeType: fileType,
           data: selectedImage as string,
         },
       },
-      { text: "Generate caption for the image" },
+      { text: "Caption this image." },
     ];
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: contents,
-    });
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: contents,
+      });
 
-    if (response.text) {
-      setCaption(response.text);
+      console.log(response);
+
+      if (response.text) {
+        setCaption(response.text);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -87,7 +100,7 @@ export default function ImageCaptionViewer() {
             <div className="space-y-6">
               {/* Image Display */}
               <div className="relative rounded-lg overflow-hidden bg-muted">
-                <img src={selectedImage || "/placeholder.svg"} alt="Uploaded" className="w-full h-auto max-h-[500px] object-contain" />
+                <img src={previewImage || "/placeholder.svg"} alt="Uploaded" className="w-full h-auto max-h-[500px] object-contain" />
               </div>
 
               {/* Caption Display */}
@@ -120,7 +133,7 @@ export default function ImageCaptionViewer() {
                 >
                   Upload New Image
                 </Button>
-                <Button disabled={isGenerating} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Button onClick={generateCaption} disabled={isGenerating} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
                   <Sparkles className="w-4 h-4 mr-2" />
                   Regenerate Caption
                 </Button>
