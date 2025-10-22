@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { GoogleGenAI } from "@google/genai";
 
-const GEMINI_API_KEY = "AIzaSyCcpgqrTKOnlbNHeoyQzkQ5O7z1WXPRoD0";
+const GEMINI_API_KEY = "-------";
 const ai = new GoogleGenAI({
   apiKey: GEMINI_API_KEY,
 });
